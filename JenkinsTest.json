@@ -1,5 +1,5 @@
 {
-  "job": "build-api",
+  "job": "Test",
   "params": {
     "BRANCH": "main"
   }
