@@ -1,5 +1,5 @@
 {
-  "job": "Open, Login, logout and close web application",
+  "job": "Jenkins Job: Open, Login, logout and close web application",
   "params": {
     "BRANCH": "main"
   }
