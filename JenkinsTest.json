@@ -1,5 +1,5 @@
 {
-  "job": "Open_Login_logout_close_web_applicatino",
+  "job": "Open_Login_logout_close_web_application",
   "params": {
     "BRANCH": "main"
   }
