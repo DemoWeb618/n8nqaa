@@ -1,5 +1,5 @@
 {
-  "job": "User-Authentication-Test",
+  "job": "n8n_Demo",
   "params": {
     "BRANCH": "main"
   }
