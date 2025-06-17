@@ -1,5 +1,5 @@
 {
-  "job": "n8n_Demo",
+  "job": "test_reproduce_defect",
   "params": {
     "JiraTicket": "SCRUM-38",
     "BRANCH": "main"
