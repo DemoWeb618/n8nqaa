@@ -1,75 +1,92 @@
  
 *** Settings ***
-Library    SeleniumLibrary
+Library           SeleniumLibrary
 Suite Setup       Open Browser To Login Page
-Suite Teardown    Close All Browsers
-Test Setup        Log Test Start
-Test Teardown     Capture Page Screenshot On Failure
+Suite Teardown    Close Browser
 
 *** Variables ***
-${URL}    https://katalon-demo-cura.herokuapp.com/
-${BROWSER}    chrome
+${BROWSER}        chrome
+${URL}            https://katalon-demo-cura.herokuapp.com/
 ${CHROME_OPTIONS}    add_argument("--headless");add_argument("--no-sandbox");add_argument("--disable-dev-shm-usage")
-${USERNAME}    John Doe
-${INVALID_PASSWORD}    ThisIsNotAPassword
-${VALID_PASSWORD}    ThisIsAPassword
-${LOGIN_BUTTON}    id=btn-login
+${USERNAME}       John Doe
+${PASSWORD}       ThisIsNotAPassword
 ${MENU_TOGGLE}    id=menu-toggle
-${LOGIN_LINK}    xpath=//a[contains(text(),'Login')]
+${LOGIN_LINK}     xpath=//a[@href='profile.php#login']
 ${USERNAME_FIELD}    id=txt-username
 ${PASSWORD_FIELD}    id=txt-password
-${APPOINTMENT_HEADER}    xpath=//h2[contains(text(),'Make Appointment')]
+${LOGIN_BUTTON}    id=btn-login
 ${ERROR_MESSAGE}    xpath=//p[contains(text(),'Login failed')]
 
 *** Test Cases ***
-Verify Issue With Invalid Password
+Verify Login Issue
+    [Documentation]    Verify that login fails with the specified credentials
     Navigate To Login Page
-    Enter Username    ${USERNAME}
-    Enter Password    ${INVALID_PASSWORD}
+    Input Login Credentials    ${USERNAME}    ${PASSWORD}
     Click Login Button
-    Verify Login Failed
+    Verify Login Fails
 
-Verify Login With Valid Password
+Verify Successful Login And Transaction
+    [Documentation]    Verify that login works with correct credentials and appointment can be made
     Navigate To Login Page
-    Enter Username    ${USERNAME}
-    Enter Password    ${VALID_PASSWORD}
+    Input Login Credentials    John Doe    ThisIsAPassword
     Click Login Button
-    Verify Login Success
+    Verify Login Succeeds
+    Make Appointment
+    Verify Appointment Confirmation
 
 *** Keywords ***
 Open Browser To Login Page
+    [Documentation]    Opens the browser and navigates to the application homepage
     Open Browser    ${URL}    ${BROWSER}    options=${CHROME_OPTIONS}
     Maximize Browser Window
+    Wait Until Page Contains Element    ${MENU_TOGGLE}    timeout=10s
 
 Navigate To Login Page
+    [Documentation]    Navigates to the login page
     Click Element    ${MENU_TOGGLE}
-    Wait Until Element Is Visible    ${LOGIN_LINK}
+    Wait Until Element Is Visible    ${LOGIN_LINK}    timeout=10s
     Click Element    ${LOGIN_LINK}
-    Wait Until Element Is Visible    ${USERNAME_FIELD}
+    Wait Until Element Is Visible    ${USERNAME_FIELD}    timeout=10s
 
-Enter Username
-    [Arguments]    ${username}
-    Input Text    ${USERNAME_FIELD}    ${username}
-
-Enter Password
-    [Arguments]    ${password}
-    Input Text    ${PASSWORD_FIELD}    ${password}
+Input Login Credentials
+    [Documentation]    Enters username and password
+    [Arguments]    ${user}    ${pass}
+    Input Text    ${USERNAME_FIELD}    ${user}
+    Input Text    ${PASSWORD_FIELD}    ${pass}
 
 Click Login Button
+    [Documentation]    Clicks the login button
     Click Button    ${LOGIN_BUTTON}
+    Sleep    2s
 
-Verify Login Failed
-    Wait Until Element Is Visible    ${ERROR_MESSAGE}
-    Page Should Contain Element    ${ERROR_MESSAGE}
+Verify Login Fails
+    [Documentation]    Verifies login failure message is displayed
+    Wait Until Element Is Visible    ${ERROR_MESSAGE}    timeout=10s
+    Element Should Be Visible    ${ERROR_MESSAGE}
     Capture Page Screenshot    login_failure.png
 
-Verify Login Success
-    Wait Until Element Is Visible    ${APPOINTMENT_HEADER}
-    Page Should Contain Element    ${APPOINTMENT_HEADER}
+Verify Login Succeeds
+    [Documentation]    Verifies user is logged in successfully
+    Wait Until Page Contains Element    xpath=//h2[contains(text(),'Make Appointment')]    timeout=10s
+    Element Should Be Visible    xpath=//h2[contains(text(),'Make Appointment')]
     Capture Page Screenshot    login_success.png
 
-Log Test Start
-    Log    Starting test: ${TEST NAME}
+Make Appointment
+    [Documentation]    Creates a new appointment
+    Select From List By Label    id=combo_facility    Tokyo CURA Healthcare Center
+    Click Element    id=chk_hospotal_readmission
+    Click Element    id=radio_program_medicare
+    Input Text    id=txt_visit_date    30/12/2023
+    Input Text    id=txt_comment    Test appointment
+    Click Button    id=btn-book-appointment
 
-Capture Page Screenshot On Failure
-    Run Keyword If Test Failed    Capture Page Screenshot    ${TEST NAME}_failure.png
+Verify Appointment Confirmation
+    [Documentation]    Verifies appointment was created successfully
+    Wait Until Page Contains Element    xpath=//h2[contains(text(),'Appointment Confirmation')]    timeout=10s
+    Element Should Be Visible    xpath=//h2[contains(text(),'Appointment Confirmation')]
+    Page Should Contain    Tokyo CURA Healthcare Center
+    Capture Page Screenshot    appointment_confirmation.png
+
+Close Browser
+    [Documentation]    Closes the current browser instance
+    Close Browser
