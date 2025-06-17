@@ -1,35 +1,64 @@
- *** Settings ***
+ Based on the Jira ticket information, I'll create a Robot Framework script to reproduce the login issue in the UAT environment.
+
+```robotframework
+*** Settings ***
 Library    SeleniumLibrary
-Documentation    Test to reproduce login issue in UAT system - SCRUM-38
+Documentation    Test script to reproduce the login failure issue with username "John Doe"
 
 *** Variables ***
-${URL}    https://katalon-demo-cura.herokuapp.com/
-${USERNAME}    John Doe
-${PASSWORD}    ThisIsNotAPassword
-${CHROME_OPTIONS}    add_argument("--headless");add_argument("--no-sandbox");add_argument("--disable-dev-shm-usage")
+${URL}              https://katalon-demo-cura.herokuapp.com/
+${BROWSER}          chrome
+${CHROME_OPTIONS}   add_argument("--headless");add_argument("--no-sandbox");add_argument("--disable-dev-shm-usage")
+${USERNAME}         John Doe
+${PASSWORD}         ThisIsNotAPassword
+${LOGIN_BUTTON}     id=btn-login
+${MENU_TOGGLE}      xpath=//a[@id='menu-toggle']
+${LOGIN_LINK}       xpath=//a[@id='login']
+${USERNAME_FIELD}   id=txt-username
+${PASSWORD_FIELD}   id=txt-password
+${ERROR_MESSAGE}    xpath=//p[@class='lead text-danger']
 
 *** Test Cases ***
-Verify Login Failure Issue
-    Open Browser    ${URL}    chrome    options=${CHROME_OPTIONS}
+Verify Login Failure
+    [Documentation]    Verify that login fails with username "John Doe" and password "ThisIsNotAPassword"
+    Open Browser    ${URL}    ${BROWSER}    options=${CHROME_OPTIONS}
     Maximize Browser Window
+    Click Element    ${MENU_TOGGLE}
+    Wait Until Element Is Visible    ${LOGIN_LINK}
+    Click Element    ${LOGIN_LINK}
     
-    # Navigate to login page
-    Click Element    xpath=//a[@id='btn-make-appointment']
+    # Verify login page is loaded
+    Wait Until Element Is Visible    ${USERNAME_FIELD}
+    Wait Until Element Is Visible    ${PASSWORD_FIELD}
     
-    # Wait for login form to load
-    Wait Until Element Is Visible    id=txt-username    timeout=10s
+    # Attempt login
+    Input Text    ${USERNAME_FIELD}    ${USERNAME}
+    Input Password    ${PASSWORD_FIELD}    ${PASSWORD}
+    Click Button    ${LOGIN_BUTTON}
     
-    # Enter credentials
-    Input Text    id=txt-username    ${USERNAME}
-    Input Text    id=txt-password    ${PASSWORD}
+    # Verify login fails
+    Wait Until Element Is Visible    ${ERROR_MESSAGE}
+    Element Should Be Visible    ${ERROR_MESSAGE}
+    Element Should Contain    ${ERROR_MESSAGE}    Login failed
     
-    # Click login button
-    Click Button    id=btn-login
-    
-    # Verify login fails as reported in the issue
-    Wait Until Element Is Visible    xpath=//p[contains(text(),'Login failed')]    timeout=5s
-    
-    # Take screenshot for evidence
-    Capture Page Screenshot    login-failure-evidence.png
+    # Capture screenshot for evidence
+    Capture Page Screenshot    login_failure.png
     
     Close Browser
+
+*** Keywords ***
+Maximize Browser Window
+    ${window size}=    Evaluate    {'width': 1920, 'height': 1080}
+    Set Window Size    ${window size}[width]    ${window size}[height]
+```
+
+This script:
+1. Opens the demo application URL in Chrome headless mode
+2. Navigates to the login page
+3. Enters the specified credentials (John Doe/ThisIsNotAPassword)
+4. Attempts to login
+5. Verifies that the login fails by checking for an error message
+6. Takes a screenshot as evidence of the issue
+7. Closes the browser
+
+The script includes the necessary headless Chrome configuration to run on AWS EC2 Linux environments.
