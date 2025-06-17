@@ -10,9 +10,8 @@ Test Teardown     Capture Page Screenshot On Failure
 ${URL}    https://katalon-demo-cura.herokuapp.com/
 ${BROWSER}    chrome
 ${CHROME_OPTIONS}    add_argument("--headless");add_argument("--no-sandbox");add_argument("--disable-dev-shm-usage")
-${INVALID_USERNAME}    John Doe
+${USERNAME}    John Doe
 ${INVALID_PASSWORD}    ThisIsNotAPassword
-${VALID_USERNAME}    John Doe
 ${VALID_PASSWORD}    ThisIsAPassword
 ${LOGIN_BUTTON}    id=btn-login
 ${MENU_TOGGLE}    id=menu-toggle
@@ -20,18 +19,19 @@ ${LOGIN_LINK}    xpath=//a[contains(text(),'Login')]
 ${USERNAME_FIELD}    id=txt-username
 ${PASSWORD_FIELD}    id=txt-password
 ${APPOINTMENT_HEADER}    xpath=//h2[contains(text(),'Make Appointment')]
+${ERROR_MESSAGE}    xpath=//p[contains(text(),'Login failed')]
 
 *** Test Cases ***
-Verify Login Failure With Invalid Credentials
+Verify Issue With Invalid Password
     Navigate To Login Page
-    Enter Username    ${INVALID_USERNAME}
+    Enter Username    ${USERNAME}
     Enter Password    ${INVALID_PASSWORD}
     Click Login Button
     Verify Login Failed
 
-Verify Login Success With Valid Credentials
+Verify Login With Valid Password
     Navigate To Login Page
-    Enter Username    ${VALID_USERNAME}
+    Enter Username    ${USERNAME}
     Enter Password    ${VALID_PASSWORD}
     Click Login Button
     Verify Login Success
@@ -59,7 +59,8 @@ Click Login Button
     Click Button    ${LOGIN_BUTTON}
 
 Verify Login Failed
-    Page Should Contain Element    xpath=//p[contains(text(),'Login failed')]
+    Wait Until Element Is Visible    ${ERROR_MESSAGE}
+    Page Should Contain Element    ${ERROR_MESSAGE}
     Capture Page Screenshot    login_failure.png
 
 Verify Login Success
