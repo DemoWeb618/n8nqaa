@@ -1,7 +1,7 @@
 {
   "job": "n8n_Demo",
   "params": {
-    "JiraTicket": "SCRUM-37",
+    "JiraTicket": "",
     "BRANCH": "main"
   }
 }
