@@ -1,79 +1,114 @@
  
-I'll create a Robot Framework script that reproduces and confirms the login defect based on your provided information.
+I'll create a Robot Framework script to reproduce and confirm the login defect according to the JIRA ticket. The script will include a valid case (successful login) for comparison.
 
 ```
 *** Settings ***
 Library           SeleniumLibrary
-Test Setup        Open Browser To Login Page
-Test Teardown     Close Browser Session
+Test Setup        Open Test Browser
+Test Teardown     Close Test Browser
 
 *** Variables ***
 ${BROWSER}        chrome
 ${URL}            https://katalon-demo-cura.herokuapp.com/
-${USERNAME}       John Doe
-${PASSWORD}       ThisIsAPassword
 ${VALID_USERNAME}    John Doe
-${VALID_PASSWORD}    ThisIsAPassword123
+${VALID_PASSWORD}    ThisIsNotAPassword
 ${CHROME_OPTIONS}    add_argument("--headless");add_argument("--no-sandbox");add_argument("--disable-dev-shm-usage");add_argument("--disable-save-password-bubble");add_argument("--disable-autofill-keyboard-accessory-view");add_argument("--disable-password-generation");add_argument("--disable-autofill")
 
 *** Test Cases ***
-Verify Login Failure With Provided Credentials
-    [Documentation]    Verify that login fails with the provided credentials
-    Click Element    id=menu-toggle
-    Click Element    xpath=//a[@href='profile.php#login']
-    Wait Until Element Is Visible    id=txt-username    timeout=10s
-    Input Text    id=txt-username    ${USERNAME}
-    Input Password    id=txt-password    ${PASSWORD}
-    Click Button    id=btn-login
-    Wait Until Element Is Visible    xpath=//*[contains(text(),'Login failed! Please ensure the username and password are valid.')]    timeout=10s
-    Page Should Contain    Login failed! Please ensure the username and password are valid.
-
-Verify Login Success With Valid Credentials
-    [Documentation]    Verify that login succeeds with valid credentials
-    Click Element    id=menu-toggle
-    Click Element    xpath=//a[@href='profile.php#login']
-    Wait Until Element Is Visible    id=txt-username    timeout=10s
-    Input Text    id=txt-username    ${VALID_USERNAME}
-    Input Password    id=txt-password    ${VALID_PASSWORD}
-    Click Button    id=btn-login
-    Wait Until Element Is Visible    id=appointment    timeout=10s
-    Page Should Contain Element    id=appointment
-    Page Should Contain    Make Appointment
-
-Make Successful Appointment After Login
-    [Documentation]    Verify that user can make an appointment after login
-    # First login
-    Click Element    id=menu-toggle
-    Click Element    xpath=//a[@href='profile.php#login']
-    Wait Until Element Is Visible    id=txt-username    timeout=10s
-    Input Text    id=txt-username    ${VALID_USERNAME}
-    Input Password    id=txt-password    ${VALID_PASSWORD}
-    Click Button    id=btn-login
-    Wait Until Element Is Visible    id=appointment    timeout=10s
+Login With Valid Credentials - Expected Success
+    [Documentation]    Verify successful login with valid credentials as a control test
+    Navigate To Login Page
+    Enter Login Credentials    ${VALID_USERNAME}    ${VALID_PASSWORD}
+    Click Login Button
+    Verify Successful Login
     
-    # Make appointment
-    Select From List By Label    id=combo_facility    Tokyo CURA Healthcare Center
-    Click Element    id=chk_hospotal_readmission
-    Click Element    id=radio_program_medicaid
-    Input Text    id=txt_visit_date    27/11/2023
-    Input Text    id=txt_comment    This is a test appointment
-    Click Button    id=btn-book-appointment
-    
-    # Verify appointment confirmation
-    Wait Until Page Contains    Appointment Confirmation    timeout=10s
-    Page Should Contain    Tokyo CURA Healthcare Center
-    Page Should Contain    Yes
-    Page Should Contain    Medicaid
-    Page Should Contain    27/11/2023
+Reproduce Login White Screen Issue - Expected Failure
+    [Documentation]    Reproduce the reported issue where login results in white screen
+    Navigate To Login Page
+    Enter Login Credentials    ${VALID_USERNAME}    ${VALID_PASSWORD}
+    Click Login Button
+    Verify No White Screen
+    Verify Booking Functionality Accessible
+
+Book Appointment After Successful Login
+    [Documentation]    Verify that booking functionality works after successful login
+    Navigate To Login Page
+    Enter Login Credentials    ${VALID_USERNAME}    ${VALID_PASSWORD}
+    Click Login Button
+    Verify Successful Login
+    Make Appointment
+    Verify Appointment Confirmation
 
 *** Keywords ***
-Open Browser To Login Page
-    [Documentation]    Opens the browser and navigates to the demo site
+Open Test Browser
+    [Documentation]    Opens the browser and navigates to the application URL with specified options
     Open Browser    ${URL}    ${BROWSER}    options=${CHROME_OPTIONS}
     Maximize Browser Window
-    Wait Until Page Contains Element    id=menu-toggle    timeout=10s
+    Wait Until Element Is Visible    xpath=//a[@href='https://katalon.com/katalon-studio']    timeout=10s
 
-Close Browser Session
+Close Test Browser
     [Documentation]    Closes the current browser instance
     Close Browser
+
+Navigate To Login Page
+    [Documentation]    Navigates to the login page from the homepage
+    Wait Until Element Is Visible    id=menu-toggle    timeout=10s
+    Click Element    id=menu-toggle
+    Wait Until Element Is Visible    xpath=//a[contains(@href, 'profile.php#login')]    timeout=10s
+    Click Element    xpath=//a[contains(@href, 'profile.php#login')]
+    Wait Until Element Is Visible    id=txt-username    timeout=10s
+
+Enter Login Credentials
+    [Arguments]    ${username}    ${password}
+    [Documentation]    Enters the username and password
+    Input Text    id=txt-username    ${username}
+    Input Password    id=txt-password    ${password}
+
+Click Login Button
+    [Documentation]    Clicks the login button
+    Click Button    id=btn-login
+    Sleep    2s    # Allow time for page transition or error to appear
+
+Verify Successful Login
+    [Documentation]    Verifies that login was successful by checking for appointment form
+    Wait Until Page Contains Element    id=appointment    timeout=10s
+    Page Should Contain Element    id=appointment
+    Element Should Be Visible    id=btn-book-appointment
+
+Verify No White Screen
+    [Documentation]    Verifies that there is no white screen (page has content)
+    Page Should Not Be Empty
+    Page Should Contain Element    xpath=//body/*    # Checks if body has any child elements
+
+Verify Booking Functionality Accessible
+    [Documentation]    Verifies that booking functionality is accessible
+    Page Should Contain Element    id=btn-book-appointment
+    Element Should Be Visible    id=btn-book-appointment
+
+Make Appointment
+    [Documentation]    Makes a test appointment
+    Select From List By Label    id=combo_facility    Seoul CURA Healthcare Center
+    Select Checkbox    id=chk_hospotal_readmission
+    Select Radio Button    programs    Medicare
+    Input Text    id=txt_visit_date    27/07/2023
+    Input Text    id=txt_comment    Test appointment
+    Click Button    id=btn-book-appointment
+
+Verify Appointment Confirmation
+    [Documentation]    Verifies that appointment was successfully booked
+    Wait Until Page Contains    Appointment Confirmation    timeout=10s
+    Page Should Contain    Appointment Confirmation
+    Page Should Contain Element    xpath=//h2[contains(text(), 'Appointment Confirmation')]
 ```
+
+This script includes:
+
+1. A test setup to open the browser with headless Chrome options for AWS EC2 Linux
+2. Three test cases:
+   - Login with valid credentials (control test)
+   - Reproduction of the white screen issue
+   - Complete flow test for booking an appointment after login
+3. Keywords for each step of the process
+4. Verifications to confirm the reported issue
+
+The script will help to determine if the white screen issue is reproducible and if the booking functionality is accessible after login.
