@@ -1,8 +1,11 @@
  
+Based on the information provided, I'll create a Robot Framework script to reproduce and confirm the login issue in the CURA Healthcare Service application. The script will include both a valid case that should succeed and a test case to verify the reported defect.
+
+```
 *** Settings ***
 Library           SeleniumLibrary
-Test Setup        Open Browser To CURA Website
-Test Teardown     Close Browser
+Test Setup        Open Browser To Application
+Test Teardown     Close Browser Instance
 
 *** Variables ***
 ${BROWSER}        chrome
@@ -12,77 +15,70 @@ ${PASSWORD}       ThisIsNotAPassword
 ${CHROME_OPTIONS}    add_argument("--headless");add_argument("--no-sandbox");add_argument("--disable-dev-shm-usage");add_argument("--disable-save-password-bubble");add_argument("--disable-autofill-keyboard-accessory-view");add_argument("--disable-password-generation");add_argument("--disable-autofill")
 
 *** Test Cases ***
-Verify CURA Website Loading
-    [Documentation]    Verify that CURA healthcare website loads successfully
-    Page Should Contain    CURA Healthcare Service
-    Page Should Contain Element    id=btn-make-appointment
-
-Login Successfully
-    [Documentation]    Verify successful login functionality
-    Click Make Appointment Button
-    Login With Valid Credentials
-    Page Should Contain Element    id=appointment
-
-Make Appointment Successfully
-    [Documentation]    Verify appointment booking flow
-    Click Make Appointment Button
-    Login With Valid Credentials
-    Select Healthcare Program    Medicare
-    Check Hospital Readmission
-    Select Date    27/12/2023
-    Add Comment    This is a test appointment
-    Click Book Appointment
-    Verify Appointment Confirmation
+Verify Valid Login Workflow
+    [Documentation]    Verify that login functionality works correctly with valid credentials
+    Go To Login Page
+    Input Login Credentials    ${USERNAME}    ${PASSWORD}
+    Submit Login
+    Verify Successful Login
+    
+Verify Reported Login Defect
+    [Documentation]    Verify the reported defect where login results in white screen
+    Go To Login Page
+    Input Login Credentials    ${USERNAME}    ${PASSWORD}
+    Submit Login
+    Run Keyword And Expect Error    *    Verify Successful Login
+    Capture Page Screenshot    white-screen-defect.png
 
 *** Keywords ***
-Open Browser To CURA Website
-    [Documentation]    Opens the browser and navigates to CURA healthcare website
+Open Browser To Application
+    [Documentation]    Opens the browser and navigates to the application URL with specified options
     Open Browser    ${URL}    ${BROWSER}    options=${CHROME_OPTIONS}
     Maximize Browser Window
-    Wait Until Page Contains Element    id=btn-make-appointment    timeout=20s
-    Set Selenium Timeout    30 seconds
+    Wait Until Page Contains    CURA Healthcare Service    timeout=10s
+    Wait Until Page Contains    We Care About Your Health    timeout=10s
 
-Click Make Appointment Button
-    [Documentation]    Clicks the Make Appointment button
-    Wait Until Element Is Visible    id=btn-make-appointment
+Close Browser Instance
+    [Documentation]    Closes the current browser instance
+    Close Browser
+
+Go To Login Page
+    [Documentation]    Navigates to the login page
+    Wait Until Element Is Visible    id=btn-make-appointment    timeout=10s
     Click Element    id=btn-make-appointment
+    Wait Until Page Contains Element    id=txt-username    timeout=10s
+    Wait Until Page Contains Element    id=txt-password    timeout=10s
 
-Login With Valid Credentials
-    [Documentation]    Login with valid username and password
-    Wait Until Element Is Visible    id=txt-username
-    Input Text    id=txt-username    ${USERNAME}
-    Input Password    id=txt-password    ${PASSWORD}
-    Click Button    id=btn-login
+Input Login Credentials
+    [Documentation]    Enters username and password on the login page
+    [Arguments]    ${username}    ${password}
+    Input Text    id=txt-username    ${username}
+    Input Text    id=txt-password    ${password}
 
-Select Healthcare Program
-    [Arguments]    ${program}
-    [Documentation]    Selects the specified healthcare program
-    Wait Until Element Is Visible    id=combo_facility
-    Select From List By Label    id=combo_facility    Tokyo CURA Healthcare Center
-    Run Keyword If    '${program}' == 'Medicare'    Click Element    id=radio_program_medicare
-    Run Keyword If    '${program}' == 'Medicaid'    Click Element    id=radio_program_medicaid
-    Run Keyword If    '${program}' == 'None'    Click Element    id=radio_program_none
+Submit Login
+    [Documentation]    Clicks the login button to submit credentials
+    Click Element    id=btn-login
+    Sleep    2s    # Allow time for login process to complete
 
-Check Hospital Readmission
-    [Documentation]    Checks the hospital readmission checkbox
-    Select Checkbox    id=chk_hospotal_readmission
+Verify Successful Login
+    [Documentation]    Verifies that login was successful by checking for booking form elements
+    Wait Until Page Contains Element    id=combo_facility    timeout=10s
+    Page Should Contain Element    id=combo_facility
+    Page Should Contain    Make Appointment
+```
 
-Select Date
-    [Arguments]    ${date}
-    [Documentation]    Selects the appointment date
-    Input Text    id=txt_visit_date    ${date}
+This script includes:
+1. Two test cases:
+   - One to verify the valid login workflow (which should pass if there's no defect)
+   - One to specifically check for the reported white screen defect
 
-Add Comment
-    [Arguments]    ${comment}
-    [Documentation]    Adds a comment to the appointment
-    Input Text    id=txt_comment    ${comment}
+2. The script uses the Chrome browser in headless mode with appropriate options for running on AWS EC2 Linux
 
-Click Book Appointment
-    [Documentation]    Clicks the Book Appointment button
-    Click Button    id=btn-book-appointment
+3. The tests will:
+   - Navigate to the application URL
+   - Go to the login page
+   - Enter the credentials mentioned in the defect report
+   - Attempt to log in
+   - Verify whether the login was successful or if the defect is reproduced
 
-Verify Appointment Confirmation
-    [Documentation]    Verifies the appointment confirmation page
-    Wait Until Page Contains Element    xpath=//h2[contains(text(),'Appointment Confirmation')]
-    Page Should Contain    Appointment Confirmation
-    Page Should Contain Element    xpath=//a[contains(text(),'Go to Homepage')]
+If the login defect is present, the "Verify Reported Login Defect" test case will capture a screenshot of the white screen, which can be useful for documenting the issue.
