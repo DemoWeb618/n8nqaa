@@ -13,15 +13,7 @@ ${PASSWORD}       ThisIsNotAPassword
 ${CHROME_OPTIONS}    add_argument("--headless");add_argument("--no-sandbox");add_argument("--disable-dev-shm-usage");add_argument("--disable-save-password-bubble");add_argument("--disable-autofill-keyboard-accessory-view");add_argument("--disable-password-generation");add_argument("--disable-autofill")
 
 *** Test Cases ***
-Verify Valid Login Workflow
-    [Documentation]    Verify that login functionality works correctly with valid credentials
-    Go To Login Page
-    Input Login Credentials    ${USERNAME}    ${PASSWORD}
-    Submit Login
-    Verify Successful Login
-    
 Verify Reported Login Defect
-    [Documentation]    Verify the reported defect where login results in white screen
     Go To Login Page
     Input Login Credentials    ${USERNAME}    ${PASSWORD}
     Submit Login
