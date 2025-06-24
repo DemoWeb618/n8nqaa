@@ -1,7 +1,7 @@
 {
   "job": "test_reproduce_defect",
   "params": {
-    "JiraTicket": "SCRUM-50",
+    "JiraTicket": "SCRUM-51",
     "BRANCH": "main"
   }
 }
