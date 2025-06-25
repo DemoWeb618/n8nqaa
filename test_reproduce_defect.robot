@@ -1,60 +1,82 @@
  
-Based on the Jira ticket details, I'll create a Robot Framework script to reproduce and confirm the defect related to downloading Report 123 in the KIKI application.
-
-```
 *** Settings ***
 Library           SeleniumLibrary
-Test Setup        Open Browser To Login Page
+Test Setup        Open Browser To CURA Healthcare
 Test Teardown     Close Browser
 
 *** Variables ***
 ${BROWSER}        chrome
 ${URL}            https://katalon-demo-cura.herokuapp.com/
-${USERNAME}       John Doe
+${USERNAME}       NiphadaS
 ${PASSWORD}       ThisIsNotAPassword
 ${CHROME_OPTIONS}    add_argument("--headless");add_argument("--no-sandbox");add_argument("--disable-dev-shm-usage");add_argument("--disable-save-password-bubble");add_argument("--disable-autofill-keyboard-accessory-view");add_argument("--disable-password-generation");add_argument("--disable-autofill")
 
 *** Test Cases ***
-Verify Report 123 Download Button Issue
-    [Documentation]    Verify that Report 123 cannot be downloaded when clicking the download button
-    Login To Application
-    Navigate To Report 123
-    Attempt To Download Report
-    Verify Download Did Not Occur
-
+Verify Data Update Functionality
+    [Documentation]    Test to verify if data can be updated in the SIT environment
+    Login To Application    ${USERNAME}    ${PASSWORD}
+    Make Appointment
+    Verify Appointment Can Be Updated
+    
 *** Keywords ***
-Open Browser To Login Page
-    [Documentation]    Opens the browser and navigates to the login page
+Open Browser To CURA Healthcare
+    [Documentation]    Opens browser to CURA Healthcare application
     Open Browser    ${URL}    ${BROWSER}    options=${CHROME_OPTIONS}
     Maximize Browser Window
-    Wait Until Page Contains Element    id=menu-toggle    timeout=10s
+    Wait Until Element Is Visible    id:menu-toggle    timeout=10s
 
 Login To Application
-    [Documentation]    Login to the application with valid credentials
-    Click Element    id=menu-toggle
-    Click Element    xpath=//a[@href="profile.php#login"]
-    Wait Until Element Is Visible    id=txt-username    timeout=10s
-    Input Text    id=txt-username    ${USERNAME}
-    Input Text    id=txt-password    ${PASSWORD}
-    Click Element    id=btn-login
-    Wait Until Page Contains    Make Appointment    timeout=10s
+    [Documentation]    Login to the application with provided credentials
+    [Arguments]    ${username}    ${password}
+    Click Element    id:menu-toggle
+    Wait Until Element Is Visible    xpath://a[contains(text(),'Login')]
+    Click Element    xpath://a[contains(text(),'Login')]
+    Input Text    id:txt-username    ${username}
+    Input Text    id:txt-password    ${password}
+    Click Element    id:btn-login
+    Wait Until Element Is Visible    id:appointment    timeout=10s
 
-Navigate To Report 123
-    [Documentation]    Navigate to the Reports section and select Report 123
-    # Since this is a demo site without actual reports functionality,
-    # we're simulating navigation to a hypothetical reports page
-    Go To    ${URL}/#reports
-    Wait Until Page Contains    Report 123    timeout=10s    error=Report section not found
+Make Appointment
+    [Documentation]    Create an appointment in the system
+    Click Element    id:btn-make-appointment
+    Wait Until Element Is Visible    id:combo_facility
+    Select From List By Label    id:combo_facility    Seoul CURA Healthcare Center
+    Click Element    id:chk_hospotal_readmission
+    Click Element    id:radio_program_medicaid
+    Input Text    id:txt_visit_date    25/06/2025
+    Input Text    id:txt_comment    Initial appointment comment
+    Click Element    id:btn-book-appointment
+    Wait Until Page Contains    Appointment Confirmation    timeout=10s
+    Page Should Contain Element    xpath://a[contains(text(),'Go to Homepage')]
 
-Attempt To Download Report
-    [Documentation]    Click on the download button for Report 123
-    # Simulate clicking on a download button (not actually present in demo site)
-    Click Element    xpath=//button[contains(text(), 'Download Report 123')]
-
-Verify Download Did Not Occur
-    [Documentation]    Verify that the download didn't start or complete
-    # Since we can't directly verify if a download occurred in headless mode,
-    # we can check for an error message or that we remain on the same page
-    Page Should Contain    Download failed    timeout=5s    error=No error message displayed for failed download
-    Location Should Be    ${URL}/#reports
-```
+Verify Appointment Can Be Updated
+    [Documentation]    Verify that data can be updated in the system
+    Click Element    xpath://a[contains(text(),'Go to Homepage')]
+    Wait Until Element Is Visible    id:btn-make-appointment    timeout=10s
+    Click Element    id:menu-toggle
+    Wait Until Element Is Visible    xpath://a[contains(text(),'History')]    timeout=10s
+    Click Element    xpath://a[contains(text(),'History')]
+    Wait Until Page Contains    History    timeout=10s
+    
+    # Verify there's an appointment that can be modified
+    Page Should Contain Element    xpath://div[contains(@class,'panel panel-info')]
+    
+    # Attempt to update the appointment
+    Click Element    xpath://a[contains(text(),'Go to Homepage')]
+    Wait Until Element Is Visible    id:btn-make-appointment    timeout=10s
+    Click Element    id:btn-make-appointment
+    
+    # Update appointment data
+    Wait Until Element Is Visible    id:combo_facility    timeout=10s
+    Select From List By Label    id:combo_facility    Hongkong CURA Healthcare Center
+    Click Element    id:radio_program_medicare
+    Input Text    id:txt_visit_date    30/06/2025
+    Input Text    id:txt_comment    Updated appointment comment
+    Click Element    id:btn-book-appointment
+    
+    # Verify update was successful
+    Wait Until Page Contains    Appointment Confirmation    timeout=10s
+    Page Should Contain    Hongkong CURA Healthcare Center
+    Page Should Contain    Medicare
+    Page Should Contain    30/06/2025
+    Page Should Contain    Updated appointment comment
