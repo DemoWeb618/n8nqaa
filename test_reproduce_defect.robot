@@ -3,53 +3,39 @@
 Library           SeleniumLibrary
 Test Setup        Open Browser To Application
 Test Teardown     Close Browser Session
-Library           DateTime
 
 *** Variables ***
 ${BROWSER}        chrome
 ${URL}            https://katalon-demo-cura.herokuapp.com/
-${USERNAME}       NSSSS.sk
-${SYSTEM_DATE}    2025-06-26
 ${CHROME_OPTIONS}    add_argument("--headless");add_argument("--no-sandbox");add_argument("--disable-dev-shm-usage");add_argument("--disable-save-password-bubble");add_argument("--disable-autofill-keyboard-accessory-view");add_argument("--disable-password-generation");add_argument("--disable-autofill")
+${USERNAME}       John Doe
+${PASSWORD}       ThisIsNotAPassword
+${TIMEOUT}        30s
 
 *** Test Cases ***
-Verify Account Information Retrieval
-    [Documentation]    Verify that the system is able to retrieve account information
-    Navigate To Login Page
-    Input Username And Password    ${USERNAME}    ThisIsNotAPassword
-    Click Login Button
-    Verify Error Retrieving Account Information
+Verify CURA Healthcare Service Website Loads
+    [Documentation]    Test to verify that the CURA Healthcare website loads successfully and doesn't display an infinite loading screen.
+    Wait Until Page Contains    CURA Healthcare Service    timeout=${TIMEOUT}    error=Page didn't load within ${TIMEOUT} - infinite loading screen detected
+    Page Should Contain    We Care About Your Health
+    Page Should Contain Element    id=btn-make-appointment
+    Click Element    id=btn-make-appointment
+    
+    # Verify navigation to login page works
+    Wait Until Page Contains Element    id=txt-username    timeout=${TIMEOUT}
+    Input Text    id=txt-username    ${USERNAME}
+    Input Text    id=txt-password    ${PASSWORD}
+    Click Element    id=btn-login
+    
+    # Verify successful login
+    Wait Until Page Contains    Make Appointment    timeout=${TIMEOUT}
 
 *** Keywords ***
 Open Browser To Application
-    [Documentation]    Opens the browser and navigates to the application with specified options
+    [Documentation]    Opens the browser and navigates to CURA Healthcare website with specified options.
     Open Browser    ${URL}    ${BROWSER}    options=${CHROME_OPTIONS}
     Maximize Browser Window
-    Wait Until Element Is Visible    id=btn-make-appointment    timeout=10s
-    Page Should Contain    CURA Healthcare Service
-    Page Should Contain    We Care About Your Health
-
-Navigate To Login Page
-    [Documentation]    Navigate from the home page to the login page
-    Click Element    id=btn-make-appointment
-    Wait Until Element Is Visible    id=txt-username    timeout=10s
-
-Input Username And Password
-    [Arguments]    ${username}    ${password}
-    [Documentation]    Enter the username and password
-    Input Text    id=txt-username    ${username}
-    Input Text    id=txt-password    ${password}
-
-Click Login Button
-    [Documentation]    Click the login button to attempt authentication
-    Click Element    id=btn-login
-    Sleep    2s
-
-Verify Error Retrieving Account Information
-    [Documentation]    Verify that an error message is displayed indicating account information cannot be retrieved
-    Page Should Contain Element    css=.text-danger
-    Page Should Contain    Login failed! Please ensure the username and password are valid.
+    Set Selenium Timeout    ${TIMEOUT}
 
 Close Browser Session
-    [Documentation]    Closes the current browser instance
+    [Documentation]    Closes the current browser instance.
     Close Browser
